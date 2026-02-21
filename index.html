@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Sona — Gold Ledger</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #C9A84C;
+  --gold-light: #F0DC9A;
+  --gold-dark: #8B6914;
+  --cream: #FAF7F0;
+  --dark: #1A1208;
+  --muted: #8A7A5A;
+  --surface: #FFF8E8;
+  --border: #EAD9A0;
+  --red: #D32F2F;
+  --green: #2E7D32;
+  --orange: #E65100;
+  --shadow: 0 2px 16px rgba(139,105,20,0.13);
+  --radius: 16px;
+  --tab-h: 72px;
+  --top-h: 64px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--cream);
+  color: var(--dark);
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+.app {
+  display: flex; flex-direction: column;
+  height: 100dvh; width: 100%;
+  max-width: 430px; margin: 0 auto;
+  background: var(--cream); overflow: hidden;
+}
+.topbar {
+  height: var(--top-h); background: var(--dark);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px; flex-shrink: 0; z-index: 10;
+}
+.topbar-logo { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 700; color: var(--gold); letter-spacing: 3px; }
+.topbar-sub { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.icon-btn {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.08); border: none; cursor: pointer; font-size: 22px;
+  position: relative;
+}
+.notif-dot { position: absolute; top: 8px; right: 8px; width: 9px; height: 9px; border-radius: 50%; background: var(--red); border: 2px solid var(--dark); }
+.scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: calc(var(--tab-h) + 16px); }
+.tabbar {
+  height: var(--tab-h); background: white; border-top: 1px solid var(--border);
+  display: flex; align-items: stretch; flex-shrink: 0;
+  box-shadow: 0 -4px 20px rgba(139,105,20,0.1);
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 4px; cursor: pointer;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  position: relative; border: none; background: none; transition: all 0.18s;
+}
+.tab-icon { font-size: 26px; line-height: 1; transition: transform 0.18s; }
+.tab-label { font-size: 11px; font-weight: 500; color: var(--muted); }
+.tab.active .tab-icon { transform: translateY(-2px); }
+.tab.active .tab-label { color: var(--gold-dark); font-weight: 600; }
+.tab-active-bar { position: absolute; bottom: 0; left: 20%; right: 20%; height: 3px; background: var(--gold); border-radius: 3px 3px 0 0; opacity: 0; transition: opacity 0.18s; }
+.tab.active .tab-active-bar { opacity: 1; }
+.tab-badge { position: absolute; top: 6px; right: calc(50% - 20px); background: var(--red); color: white; font-size: 10px; font-weight: 700; border-radius: 10px; padding: 1px 5px; min-width: 18px; text-align: center; line-height: 16px; }
+.fab {
+  position: fixed; bottom: calc(var(--tab-h) + 16px); right: calc(50% - 215px + 16px);
+  width: 58px; height: 58px; background: var(--gold); border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; color: var(--dark);
+  box-shadow: 0 6px 24px rgba(201,168,76,0.45); border: none; cursor: pointer;
+  z-index: 50; transition: transform 0.15s;
+}
+.fab:active { transform: scale(0.93); }
+.page { display: none; }
+.page.active { display: block; }
+.section-label { padding: 20px 20px 10px; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.stats-scroll { display: flex; gap: 12px; padding: 16px 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.stats-scroll::-webkit-scrollbar { display: none; }
+.stat-card { border-radius: var(--radius); padding: 18px 20px; min-width: 150px; flex-shrink: 0; position: relative; overflow: hidden; }
+.stat-card.gold-card { background: linear-gradient(135deg, #2D2210, #1A1208); border: 1px solid rgba(201,168,76,0.3); }
+.stat-card.red-card { background: linear-gradient(135deg, #3B1010, #1A1208); border: 1px solid rgba(211,47,47,0.3); }
+.stat-card.green-card { background: linear-gradient(135deg, #0D2B14, #1A1208); border: 1px solid rgba(46,125,50,0.3); }
+.stat-card.blue-card { background: linear-gradient(135deg, #0D1E2B, #1A1208); border: 1px solid rgba(41,128,185,0.3); }
+.stat-emoji { font-size: 28px; margin-bottom: 10px; display: block; }
+.stat-val { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 700; color: white; line-height: 1; }
+.stat-lbl { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+.alert-banner { margin: 0 16px 10px; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; }
+.alert-banner.alert-red { background: #FFF0F0; border: 1.5px solid #FFCDD2; }
+.alert-banner.alert-amber { background: #FFFDE7; border: 1.5px solid #FFE082; }
+.alert-big { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 700; line-height: 1; }
+.alert-red .alert-big { color: var(--red); }
+.alert-amber .alert-big { color: #E65100; }
+.alert-text strong { font-size: 15px; display: block; color: var(--dark); }
+.alert-text span { font-size: 12px; color: var(--muted); }
+.txn-list { padding: 0 16px; }
+.txn-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 12px; overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.15s; }
+.txn-card:active { transform: scale(0.98); }
+.txn-card-top { padding: 16px 16px 12px; display: flex; justify-content: space-between; align-items: flex-start; }
+.txn-party { font-size: 18px; font-weight: 600; color: var(--dark); }
+.txn-phone { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.txn-type-badge { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 20px; flex-shrink: 0; margin-left: 10px; }
+.badge-gold-credit { background: #FFF3CD; color: #8B6914; }
+.badge-cash-loan { background: #E8F5E9; color: #2E7D32; }
+.badge-gold-taken { background: #E3F2FD; color: #1565C0; }
+.badge-wholesale { background: #F3E5F5; color: #6A1B9A; }
+.txn-card-mid { padding: 0 16px 14px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; border-bottom: 1px solid var(--border); }
+.txn-metric label { font-size: 11px; color: var(--muted); display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+.txn-metric span { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700; color: var(--dark); display: block; line-height: 1.2; }
+.txn-metric span.amt { color: var(--gold-dark); }
+.txn-card-bot { padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; }
+.txn-date-row { font-size: 12px; color: var(--muted); }
+.txn-date-row strong { color: var(--dark); font-weight: 500; }
+.status-pill { font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 20px; }
+.pill-open { background: #FFF3E0; color: #E65100; }
+.pill-closed { background: #E8F5E9; color: #2E7D32; }
+.pill-overdue { background: #FFEBEE; color: #B71C1C; }
+.txn-overdue-bar { height: 4px; background: linear-gradient(90deg, var(--red), #FF8A80); }
+.txn-open-bar { height: 4px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); }
+.txn-closed-bar { height: 4px; background: linear-gradient(90deg, #27AE60, #81C784); }
+.filter-strip { display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.filter-strip::-webkit-scrollbar { display: none; }
+.chip { padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; border: 1.5px solid var(--border); background: white; color: var(--muted); cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.15s; }
+.chip.active { background: var(--gold); color: var(--dark); border-color: var(--gold); font-weight: 600; }
+.search-wrap { padding: 12px 16px 0; }
+.search-box { display: flex; align-items: center; gap: 10px; background: white; border: 1.5px solid var(--border); border-radius: 14px; padding: 12px 16px; }
+.search-box input { flex: 1; border: none; background: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--dark); }
+.search-box input::placeholder { color: var(--muted); }
+.empty-state { padding: 60px 20px; text-align: center; }
+.empty-icon { font-size: 56px; display: block; margin-bottom: 12px; opacity: 0.35; }
+.empty-state p { font-size: 15px; color: var(--muted); line-height: 1.6; }
+.reminder-group-label { padding: 16px 20px 8px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.reminder-group-label.red { color: var(--red); }
+.reminder-group-label.amber { color: var(--orange); }
+.reminder-group-label.mgreen { color: var(--green); }
+.reminder-card { background: white; border-radius: var(--radius); border: 1.5px solid var(--border); margin: 0 16px 10px; padding: 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; box-shadow: var(--shadow); }
+.reminder-card.rem-overdue { border-color: #FFCDD2; background: #FFFAFA; }
+.reminder-card.rem-today { border-color: #FFE082; background: #FFFDF0; }
+.rem-icon { font-size: 30px; flex-shrink: 0; }
+.rem-info { flex: 1; min-width: 0; }
+.rem-name { font-size: 16px; font-weight: 600; color: var(--dark); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rem-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.rem-date { font-size: 13px; font-weight: 600; text-align: right; flex-shrink: 0; }
+.rem-date.red { color: var(--red); }
+.rem-date.amber { color: var(--orange); }
+.rem-date.mgreen { color: var(--green); }
+.party-card { background: white; border-radius: var(--radius); border: 1px solid var(--border); margin: 0 16px 12px; padding: 16px; box-shadow: var(--shadow); cursor: pointer; }
+.party-card-top { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.party-avatar { width: 50px; height: 50px; border-radius: 14px; background: var(--dark); display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 22px; color: var(--gold); font-weight: 700; flex-shrink: 0; }
+.party-name { font-size: 17px; font-weight: 600; color: var(--dark); }
+.party-phone { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.party-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.p-stat { background: var(--surface); border-radius: 10px; padding: 10px 12px; }
+.p-stat label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; }
+.p-stat span { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 700; color: var(--dark); display: block; }
+/* BOTTOM SHEET */
+.sheet-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; backdrop-filter: blur(3px); }
+.sheet-overlay.open { display: block; }
+.bottom-sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 430px; margin: 0 auto; background: white; border-radius: 24px 24px 0 0; z-index: 301; max-height: 92dvh; overflow-y: auto; transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.32,0.72,0,1); }
+.bottom-sheet.open { transform: translateY(0); }
+.sheet-handle { width: 40px; height: 5px; border-radius: 3px; background: var(--border); margin: 12px auto 4px; }
+.sheet-header { padding: 8px 20px 16px; border-bottom: 1px solid var(--border); }
+.sheet-party { font-size: 22px; font-weight: 700; color: var(--dark); }
+.sheet-phone { font-size: 14px; color: var(--muted); margin-top: 4px; }
+.sheet-badges { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.sheet-body { padding: 16px 20px; }
+.detail-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.d-item label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 3px; }
+.d-item span { font-size: 16px; font-weight: 600; color: var(--dark); }
+.d-item span.big { font-family: 'Cormorant Garamond', serif; font-size: 24px; color: var(--gold-dark); }
+.wa-row { border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 14px; }
+.wa-confirmed { background: #E8F5E9; color: #2E7D32; }
+.wa-pending { background: #FFF3E0; color: #E65100; }
+.wa-icon { font-size: 22px; }
+.sheet-actions { display: flex; flex-direction: column; gap: 10px; padding: 16px 20px 20px; border-top: 1px solid var(--border); }
+.big-btn { width: 100%; padding: 16px; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s; }
+.big-btn:active { transform: scale(0.97); }
+.big-btn-gold { background: var(--gold); color: var(--dark); }
+.big-btn-green { background: #E8F5E9; color: var(--green); border: 1.5px solid #C8E6C9; }
+.big-btn-red { background: #FFEBEE; color: var(--red); border: 1.5px solid #FFCDD2; }
+.big-btn-outline { background: white; color: var(--muted); border: 1.5px solid var(--border); }
+.photo-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; }
+.photo-thumb { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
+.notes-box { background: var(--surface); border-radius: 12px; padding: 12px 14px; font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+/* FORM SHEET */
+.form-sheet { position: fixed; inset: 0; background: var(--cream); z-index: 400; overflow-y: auto; transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.32,0.72,0,1); max-width: 430px; margin: 0 auto; }
+.form-sheet.open { transform: translateY(0); }
+.form-topbar { position: sticky; top: 0; background: var(--dark); z-index: 5; padding: 0 16px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+.form-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--gold); font-weight: 600; }
+.close-icon-btn { background: none; border: none; font-size: 24px; color: white; cursor: pointer; padding: 8px; }
+.form-body { padding: 20px 16px 100px; }
+.fg { margin-bottom: 16px; }
+.fg label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; display: block; margin-bottom: 7px; }
+.fg input, .fg select, .fg textarea { width: 100%; padding: 14px 16px; background: white; border: 1.5px solid var(--border); border-radius: 12px; font-family: 'DM Sans', sans-serif; font-size: 16px; color: var(--dark); outline: none; -webkit-appearance: none; appearance: none; transition: border-color 0.2s; }
+.fg input:focus, .fg select:focus, .fg textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
+.fg textarea { resize: vertical; min-height: 80px; }
+.fg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.calc-chip { background: var(--dark); color: var(--gold); border-radius: 12px; padding: 14px 16px; font-size: 15px; font-weight: 600; margin-bottom: 16px; text-align: center; font-family: 'Cormorant Garamond', serif; }
+.upload-zone { border: 2px dashed var(--border); border-radius: 14px; padding: 24px; text-align: center; cursor: pointer; background: white; font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+.upload-zone .up-icon { font-size: 36px; display: block; margin-bottom: 8px; }
+#upload-input { display: none; }
+.preview-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.prev-img { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border); }
+.form-save-btn { position: sticky; bottom: 0; background: white; border-top: 1px solid var(--border); z-index: 6; padding: 14px 20px 28px; }
+.form-save-inner { width: 100%; padding: 16px; background: var(--gold); border-radius: 14px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 17px; font-weight: 700; color: var(--dark); display: flex; align-items: center; justify-content: center; gap: 8px; }
+.form-save-inner:active { transform: scale(0.97); }
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+/* WA SHEET */
+.wa-sheet { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 500; display: none; align-items: flex-end; justify-content: center; }
+.wa-sheet.open { display: flex; }
+.wa-inner { background: white; border-radius: 24px 24px 0 0; width: 100%; max-width: 430px; padding: 12px 20px 36px; animation: slideUp 0.3s ease; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.wa-inner h3 { font-size: 18px; font-weight: 700; color: var(--dark); margin: 10px 0 12px; text-align: center; }
+.wa-preview { background: #E7FFDB; border-radius: 14px; padding: 14px; font-size: 13px; color: #1A3A1A; line-height: 1.6; max-height: 220px; overflow-y: auto; margin-bottom: 16px; white-space: pre-line; border: 1px solid #C8F0B4; }
+.wa-action-row { display: flex; gap: 10px; }
+.wa-action-row button { flex: 1; }
+/* CLOSE SHEET */
+.close-sheet { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 500; display: none; align-items: flex-end; justify-content: center; }
+.close-sheet.open { display: flex; }
+.close-inner { background: white; border-radius: 24px 24px 0 0; width: 100%; max-width: 430px; padding: 12px 20px 36px; animation: slideUp 0.3s ease; }
+.close-inner h3 { font-size: 18px; font-weight: 700; color: var(--green); margin: 10px 0 16px; text-align: center; }
+.close-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.c-item { background: var(--surface); border-radius: 12px; padding: 12px; }
+.c-item label { font-size: 11px; color: var(--muted); display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+.c-item span { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700; color: var(--dark); display: block; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo">✦ SONA</div>
+      <div class="topbar-sub">Gold Ledger</div>
+    </div>
+    <div>
+      <button class="icon-btn" onclick="showPage('reminders')">
+        🔔<span class="notif-dot" id="notif-dot" style="display:none"></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="scroll-area" id="scroll-area">
+    <!-- HOME -->
+    <div class="page active" id="page-home">
+      <div class="stats-scroll">
+        <div class="stat-card gold-card"><span class="stat-emoji">⚖️</span><div class="stat-val" id="s-gold">0g</div><div class="stat-lbl">Gold Outstanding</div></div>
+        <div class="stat-card red-card"><span class="stat-emoji">💰</span><div class="stat-val" id="s-cash">₹0</div><div class="stat-lbl">Cash Lent Out</div></div>
+        <div class="stat-card green-card"><span class="stat-emoji">📋</span><div class="stat-val" id="s-open">0</div><div class="stat-lbl">Open Deals</div></div>
+        <div class="stat-card blue-card"><span class="stat-emoji">🤝</span><div class="stat-val" id="s-parties">0</div><div class="stat-lbl">Parties</div></div>
+      </div>
+      <div id="alert-overdue-banner" style="display:none" class="alert-banner alert-red">
+        <div class="alert-big" id="a-overdue">0</div>
+        <div class="alert-text"><strong>⚠️ Overdue Follow-ups</strong><span>Past due date — needs attention</span></div>
+      </div>
+      <div id="alert-upcoming-banner" style="display:none" class="alert-banner alert-amber">
+        <div class="alert-big" id="a-upcoming">0</div>
+        <div class="alert-text"><strong>📅 Due This Week</strong><span>Follow up soon</span></div>
+      </div>
+      <div class="section-label">Recent Transactions</div>
+      <div class="txn-list" id="home-txn-list"></div>
+    </div>
+
+    <!-- LEDGER -->
+    <div class="page" id="page-txns">
+      <div class="search-wrap">
+        <div class="search-box">
+          <span style="font-size:18px;color:var(--muted)">🔍</span>
+          <input type="text" placeholder="Search name or phone…" id="search-input" oninput="renderTxnPage()">
+        </div>
+      </div>
+      <div class="filter-strip">
+        <span class="chip active" data-f="all" onclick="setFilter('all',this)">All</span>
+        <span class="chip" data-f="gold_credit" onclick="setFilter('gold_credit',this)">Gold Credit</span>
+        <span class="chip" data-f="cash_loan" onclick="setFilter('cash_loan',this)">Cash Loan</span>
+        <span class="chip" data-f="gold_taken" onclick="setFilter('gold_taken',this)">Gold Taken</span>
+        <span class="chip" data-f="open" onclick="setFilter('open',this)">Open</span>
+        <span class="chip" data-f="closed" onclick="setFilter('closed',this)">Closed</span>
+        <span class="chip" data-f="overdue" onclick="setFilter('overdue',this)">Overdue 🔴</span>
+      </div>
+      <div class="txn-list" id="txn-list"></div>
+    </div>
+
+    <!-- REMINDERS -->
+    <div class="page" id="page-reminders">
+      <div id="reminders-content"></div>
+    </div>
+
+    <!-- PARTIES -->
+    <div class="page" id="page-parties">
+      <div class="section-label">All Parties</div>
+      <div id="parties-list"></div>
+    </div>
+  </div>
+
+  <div class="tabbar">
+    <button class="tab active" id="tab-home" onclick="showPage('home')">
+      <span class="tab-icon">🏠</span><span class="tab-label">Home</span><div class="tab-active-bar"></div>
+    </button>
+    <button class="tab" id="tab-txns" onclick="showPage('txns')">
+      <span class="tab-icon">📒</span><span class="tab-label">Ledger</span><div class="tab-active-bar"></div>
+    </button>
+    <button class="tab" id="tab-reminders" onclick="showPage('reminders')">
+      <span class="tab-icon">🔔</span><span class="tab-label">Alerts</span>
+      <span class="tab-badge" id="tab-badge" style="display:none">0</span>
+      <div class="tab-active-bar"></div>
+    </button>
+    <button class="tab" id="tab-parties" onclick="showPage('parties')">
+      <span class="tab-icon">🤝</span><span class="tab-label">Parties</span><div class="tab-active-bar"></div>
+    </button>
+  </div>
+</div>
+
+<button class="fab" onclick="openForm()">＋</button>
+
+<!-- DETAIL SHEET -->
+<div class="sheet-overlay" id="sheet-overlay" onclick="closeSheet()"></div>
+<div class="bottom-sheet" id="bottom-sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-party" id="ds-party"></div>
+    <div class="sheet-phone" id="ds-phone"></div>
+    <div class="sheet-badges" id="ds-badges"></div>
+  </div>
+  <div class="sheet-body" id="ds-body"></div>
+  <div class="sheet-actions" id="ds-actions"></div>
+</div>
+
+<!-- ADD FORM -->
+<div class="form-sheet" id="form-sheet">
+  <div class="form-topbar">
+    <div class="form-title">New Transaction</div>
+    <button class="close-icon-btn" onclick="closeForm()">✕</button>
+  </div>
+  <div class="form-body">
+    <div class="fg"><label>Party Name *</label><input type="text" id="f-party" placeholder="e.g. Sharma Jewellers" list="party-list" autocomplete="off"><datalist id="party-list"></datalist></div>
+    <div class="fg"><label>Phone Number *</label><input type="tel" id="f-phone" placeholder="e.g. 9876543210" inputmode="numeric"></div>
+    <div class="fg"><label>Transaction Type *</label>
+      <select id="f-type" onchange="calcAmt()">
+        <option value="">— Select Type —</option>
+        <option value="gold_credit">🥇 Gold Given on Credit</option>
+        <option value="cash_loan">💰 Cash Loan (Gold Mortgage)</option>
+        <option value="gold_taken">📥 Gold Taken from Vendor</option>
+        <option value="wholesale">📦 Wholesale Deal</option>
+      </select>
+    </div>
+    <div class="fg-row">
+      <div class="fg"><label>Metal</label><select id="f-metal"><option value="gold">🥇 Gold</option><option value="silver">🥈 Silver</option></select></div>
+      <div class="fg"><label>Purity</label><input type="text" id="f-purity" placeholder="22K / 24K / 999"></div>
+    </div>
+    <div class="fg-row">
+      <div class="fg"><label>Weight (grams) *</label><input type="number" id="f-weight" placeholder="e.g. 50" step="0.001" inputmode="decimal" oninput="calcAmt()"></div>
+      <div class="fg"><label>Rate (₹/10g) *</label><input type="number" id="f-rate" placeholder="e.g. 72000" inputmode="numeric" oninput="calcAmt()"></div>
+    </div>
+    <div class="calc-chip" id="calc-chip">Amount: —</div>
+    <div class="fg"><label>Override Amount (₹)</label><input type="number" id="f-amount" placeholder="Auto-calculated above" inputmode="numeric"></div>
+    <div class="divider"></div>
+    <div class="fg-row">
+      <div class="fg"><label>Date *</label><input type="date" id="f-date"></div>
+      <div class="fg"><label>Time</label><input type="time" id="f-time"></div>
+    </div>
+    <div class="fg-row">
+      <div class="fg"><label>Follow-up Date</label><input type="date" id="f-followup"></div>
+      <div class="fg"><label>Remind Before</label><select id="f-reminder"><option value="1">1 day</option><option value="3" selected>3 days</option><option value="7">7 days</option></select></div>
+    </div>
+    <div class="fg"><label>Notes</label><textarea id="f-notes" placeholder="Any extra details…"></textarea></div>
+    <div class="divider"></div>
+    <div class="fg"><label>Upload Photos</label></div>
+    <div class="upload-zone" onclick="document.getElementById('upload-input').click()">
+      <span class="up-icon">📷</span>Tap to upload photos of gold or documents
+      <input type="file" id="upload-input" multiple accept="image/*" onchange="handleUpload(event)">
+    </div>
+    <div class="preview-row" id="preview-row"></div>
+  </div>
+  <div class="form-save-btn">
+    <button class="form-save-inner" onclick="saveTransaction()">💾 Save & Send WhatsApp</button>
+  </div>
+</div>
+
+<!-- WA SHEET -->
+<div class="wa-sheet" id="wa-sheet">
+  <div class="wa-inner">
+    <div class="sheet-handle" style="margin:0 auto 8px"></div>
+    <h3>📲 WhatsApp Verification</h3>
+    <div class="wa-preview" id="wa-preview"></div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center" id="wa-to-label"></p>
+    <div class="wa-action-row">
+      <button class="big-btn big-btn-outline" onclick="closeWA()">Skip</button>
+      <button class="big-btn big-btn-gold" id="wa-open-btn">Open WhatsApp 📱</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLOSE DEAL SHEET -->
+<div class="close-sheet" id="close-sheet">
+  <div class="close-inner">
+    <div class="sheet-handle" style="margin:0 auto 8px"></div>
+    <h3>✅ Mark as Closed</h3>
+    <div class="close-detail-grid" id="close-grid"></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;text-align:center">Both parties will receive a WhatsApp closure message.</p>
+    <div style="display:flex;gap:10px">
+      <button class="big-btn big-btn-outline" onclick="document.getElementById('close-sheet').classList.remove('open')">Cancel</button>
+      <button class="big-btn big-btn-green" id="close-confirm-btn">Confirm & Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════ VERIFICATION PAGE — runs when party clicks Accept/Dispute link ═══════
+(function(){
+  const params=new URLSearchParams(window.location.search);
+  const txnId=params.get('txn');
+  const action=params.get('action');
+  if(!txnId||!action) return; // normal app load
+  const allTxns=JSON.parse(localStorage.getItem('sona_v2')||'[]');
+  const t=allTxns.find(x=>x.id===txnId);
+  const TYPE_N={gold_credit:'Gold Given on Credit',cash_loan:'Cash Loan (Mortgage)',gold_taken:'Gold Taken',wholesale:'Wholesale Deal'};
+  const isAccept=action==='accept';
+  // Update status in localStorage (works if same device/browser)
+  if(t){ t.waStatus=isAccept?'confirmed':'disputed'; localStorage.setItem('sona_v2',JSON.stringify(allTxns)); }
+  // Show standalone verification page
+  document.open();
+  document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><title>SONA — Transaction '+(isAccept?'Accepted':'Disputed')+'</title><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"DM Sans",sans-serif;background:#FAF7F0;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px}.card{background:white;border-radius:24px;max-width:400px;width:100%;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.12)}.top{padding:32px 28px 24px;text-align:center;background:'+(isAccept?'#1A3A1A':'#3A1A1A')+'}.icon{font-size:56px;display:block;margin-bottom:12px}.title{font-family:"Cormorant Garamond",serif;font-size:28px;font-weight:700;color:'+(isAccept?'#69F0AE':'#FF8A80')+'}.sub{font-size:13px;color:rgba(255,255,255,.6);margin-top:6px}.body{padding:24px 28px}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}.item{background:#FFF8E8;border-radius:12px;padding:12px 14px}.item label{font-size:11px;color:#8A7A5A;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px}.item span{font-family:"Cormorant Garamond",serif;font-size:20px;font-weight:700;color:#1A1208;display:block}.notice{background:'+(isAccept?'#E8F5E9':'#FFEBEE')+';border-radius:12px;padding:14px 16px;font-size:14px;color:'+(isAccept?'#2E7D32':'#C62828')+';margin-top:16px;line-height:1.7;text-align:center}.footer{padding:20px 28px 28px;text-align:center;font-size:12px;color:#8A7A5A}.nf{text-align:center;padding:40px 28px}.nf p{font-size:15px;color:#8A7A5A;margin-top:12px;line-height:1.6}</style></head><body><div class="card">'+
+  (t?
+    '<div class="top"><span class="icon">'+(isAccept?'✅':'❌')+'</span><div class="title">Transaction '+(isAccept?'Accepted':'Disputed')+'</div><div class="sub">'+t.party+' · '+new Date().toLocaleDateString('en-IN')+'</div></div><div class="body"><div class="row"><div class="item"><label>Type</label><span style="font-size:13px;font-family:DM Sans">'+(TYPE_N[t.type]||t.type)+'</span></div><div class="item"><label>Metal</label><span style="font-size:16px">'+(t.metal==='gold'?'🥇 Gold':'🥈 Silver')+' '+(t.purity||'')+'</span></div></div><div class="row"><div class="item"><label>Weight</label><span>'+t.weight+'g</span></div><div class="item"><label>Amount</label><span style="font-size:18px">₹'+t.amount.toLocaleString('en-IN')+'</span></div></div><div class="row"><div class="item"><label>Rate /10g</label><span style="font-size:16px">₹'+t.rate.toLocaleString('en-IN')+'</span></div><div class="item"><label>Date</label><span style="font-size:14px;font-family:DM Sans">'+t.date+'</span></div></div><div class="notice">'+(isAccept?'✅ You have <strong>accepted</strong> this transaction. This is now recorded. The ledger owner has been notified.':'❌ You have <strong>disputed</strong> this transaction. The ledger owner will contact you shortly to resolve this.')+'</div></div><div class="footer">✦ SONA Gold Ledger</div>'
+    :
+    '<div class="body"><div class="nf"><span style="font-size:48px">🔍</span><p>Transaction not found.<br>This link may be expired or the transaction was deleted.<br><br>Please contact the sender directly.</p></div></div>'
+  )+'</div></body></html>');
+  document.close();
+})();
+
+let transactions = JSON.parse(localStorage.getItem('sona_v2')||'[]');
+let uploadedImages = [];
+let currentFilter = 'all';
+let closeTargetId = null;
+
+if (!transactions.length) {
+  const past=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().split('T')[0];};
+  const future=n=>{const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().split('T')[0];};
+  transactions = [
+    {id:'T001',party:'Sharma Jewellers',phone:'9876543210',type:'gold_credit',metal:'gold',weight:100,rate:72000,amount:720000,purity:'22K',date:past(5),time:'11:30',followup:past(2),notes:'Given for wedding season stock',status:'open',waStatus:'confirmed',images:[],reminder:3,createdAt:Date.now()-5*864e5},
+    {id:'T002',party:'Gupta Traders',phone:'9123456780',type:'cash_loan',metal:'gold',weight:200,rate:71500,amount:1430000,purity:'24K',date:past(10),time:'14:00',followup:future(5),notes:'Gold mortgaged against loan',status:'open',waStatus:'pending',images:[],reminder:3,createdAt:Date.now()-10*864e5},
+    {id:'T003',party:'Patel Gold House',phone:'8888777766',type:'wholesale',metal:'silver',weight:1000,rate:850,amount:85000,purity:'999',date:past(15),time:'09:00',followup:past(8),notes:'Bulk silver',status:'closed',waStatus:'confirmed',images:[],reminder:1,createdAt:Date.now()-15*864e5},
+    {id:'T004',party:'Mehta Ornaments',phone:'9999111100',type:'gold_taken',metal:'gold',weight:55,rate:73000,amount:401500,purity:'18K',date:past(3),time:'16:00',followup:future(12),notes:'Stock for display',status:'open',waStatus:'pending',images:[],reminder:3,createdAt:Date.now()-3*864e5},
+  ];
+  save();
+}
+
+function save(){localStorage.setItem('sona_v2',JSON.stringify(transactions));}
+
+const TYPE_NAMES={gold_credit:'Gold Credit',cash_loan:'Cash Loan',gold_taken:'Gold Taken',wholesale:'Wholesale'};
+const TYPE_CLS={gold_credit:'badge-gold-credit',cash_loan:'badge-cash-loan',gold_taken:'badge-gold-taken',wholesale:'badge-wholesale'};
+
+function typeBadge(type){return `<span class="txn-type-badge ${TYPE_CLS[type]||''}">${TYPE_NAMES[type]||type}</span>`;}
+
+function statusInfo(t){
+  if(t.status==='closed') return {label:'✓ Closed',cls:'pill-closed',bar:'txn-closed-bar'};
+  if(!t.followup) return {label:'Open',cls:'pill-open',bar:'txn-open-bar'};
+  const today=new Date();today.setHours(0,0,0,0);
+  if(new Date(t.followup)<today) return {label:'Overdue ⚠️',cls:'pill-overdue',bar:'txn-overdue-bar'};
+  return {label:'Open',cls:'pill-open',bar:'txn-open-bar'};
+}
+
+function fmtAmt(n){return '₹'+n.toLocaleString('en-IN');}
+
+function txnCard(t){
+  const si=statusInfo(t);
+  return `<div class="txn-card" onclick="openDetail('${t.id}')">
+    <div class="${si.bar}"></div>
+    <div class="txn-card-top">
+      <div><div class="txn-party">${t.party}</div><div class="txn-phone">📞 ${t.phone}</div></div>
+      ${typeBadge(t.type)}
+    </div>
+    <div class="txn-card-mid">
+      <div class="txn-metric"><label>${t.metal==='gold'?'🥇':'🥈'} Weight</label><span>${t.weight}g</span></div>
+      <div class="txn-metric"><label>💰 Amount</label><span class="amt">${fmtAmt(t.amount)}</span></div>
+      <div class="txn-metric"><label>📈 Rate/10g</label><span style="font-size:17px">₹${(t.rate/1000).toFixed(1)}k</span></div>
+    </div>
+    <div class="txn-card-bot">
+      <div class="txn-date-row"><strong>${t.date}</strong> ${t.time||''}${t.followup?`<br><span style="font-size:11px">Due: ${t.followup}</span>`:''}</div>
+      <span class="status-pill ${si.cls}">${si.label}</span>
+    </div>
+  </div>`;
+}
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const tab=document.getElementById('tab-'+id);
+  if(tab) tab.classList.add('active');
+  document.getElementById('scroll-area').scrollTop=0;
+  if(id==='reminders') renderReminders();
+  if(id==='parties') renderParties();
+  if(id==='txns') renderTxnPage();
+  if(id==='home') renderHome();
+}
+
+function renderHome(){
+  const open=transactions.filter(t=>t.status==='open');
+  const goldOut=open.filter(t=>['gold_credit','gold_taken'].includes(t.type)&&t.metal==='gold').reduce((s,t)=>s+t.weight,0);
+  const cashOut=open.filter(t=>t.type==='cash_loan').reduce((s,t)=>s+t.amount,0);
+  const parties=new Set(transactions.map(t=>t.phone)).size;
+  document.getElementById('s-gold').textContent=goldOut.toFixed(1)+'g';
+  document.getElementById('s-cash').textContent=cashOut>=1e5?'₹'+(cashOut/1e5).toFixed(1)+'L':fmtAmt(cashOut);
+  document.getElementById('s-open').textContent=open.length;
+  document.getElementById('s-parties').textContent=parties;
+  const today=new Date();today.setHours(0,0,0,0);
+  const week=new Date(today);week.setDate(week.getDate()+7);
+  const overdue=open.filter(t=>t.followup&&new Date(t.followup)<today).length;
+  const upcoming=open.filter(t=>{if(!t.followup)return false;const d=new Date(t.followup);return d>=today&&d<=week;}).length;
+  document.getElementById('alert-overdue-banner').style.display=overdue?'':'none';
+  document.getElementById('alert-upcoming-banner').style.display=upcoming?'':'none';
+  document.getElementById('a-overdue').textContent=overdue;
+  document.getElementById('a-upcoming').textContent=upcoming;
+  const total=overdue+upcoming;
+  document.getElementById('tab-badge').textContent=total;
+  document.getElementById('tab-badge').style.display=total?'':'none';
+  document.getElementById('notif-dot').style.display=total?'':'none';
+  const list=document.getElementById('home-txn-list');
+  const recent=transactions.slice(0,8);
+  list.innerHTML=recent.length?recent.map(txnCard).join(''):`<div class="empty-state"><span class="empty-icon">⚖️</span><p>No transactions yet.<br>Tap ＋ to add your first entry.</p></div>`;
+}
+
+function renderTxnPage(){
+  const q=(document.getElementById('search-input').value||'').toLowerCase();
+  const today=new Date();today.setHours(0,0,0,0);
+  let data=transactions.filter(t=>{
+    if(q&&!t.party.toLowerCase().includes(q)&&!t.phone.includes(q)) return false;
+    if(currentFilter==='all') return true;
+    if(currentFilter==='open') return t.status==='open';
+    if(currentFilter==='closed') return t.status==='closed';
+    if(currentFilter==='overdue') return t.status==='open'&&t.followup&&new Date(t.followup)<today;
+    return t.type===currentFilter;
+  });
+  const list=document.getElementById('txn-list');
+  list.innerHTML=data.length?data.map(txnCard).join(''):`<div class="empty-state"><span class="empty-icon">🔍</span><p>No transactions found.</p></div>`;
+}
+
+function setFilter(f,el){
+  currentFilter=f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderTxnPage();
+}
+
+function renderReminders(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const week=new Date(today);week.setDate(week.getDate()+7);
+  const open=transactions.filter(t=>t.status==='open'&&t.followup);
+  const overdue=open.filter(t=>new Date(t.followup)<today).sort((a,b)=>new Date(a.followup)-new Date(b.followup));
+  const todayDue=open.filter(t=>new Date(t.followup).getTime()===today.getTime());
+  const upcoming=open.filter(t=>{const d=new Date(t.followup);return d>today&&d<=week;}).sort((a,b)=>new Date(a.followup)-new Date(b.followup));
+  let html='';
+  if(overdue.length){html+=`<div class="reminder-group-label red">⚠️ Overdue (${overdue.length})</div>`;html+=overdue.map(t=>remCard(t,'overdue')).join('');}
+  if(todayDue.length){html+=`<div class="reminder-group-label amber">🔔 Due Today (${todayDue.length})</div>`;html+=todayDue.map(t=>remCard(t,'today')).join('');}
+  if(upcoming.length){html+=`<div class="reminder-group-label mgreen">📅 Upcoming (${upcoming.length})</div>`;html+=upcoming.map(t=>remCard(t,'upcoming')).join('');}
+  if(!html)html=`<div class="empty-state"><span class="empty-icon">✅</span><p>All caught up!<br>No pending follow-ups.</p></div>`;
+  document.getElementById('reminders-content').innerHTML=html;
+}
+
+function remCard(t,kind){
+  const today=new Date();today.setHours(0,0,0,0);
+  const d=new Date(t.followup);
+  const diff=Math.round((d-today)/864e5);
+  const dateStr=diff<0?`${Math.abs(diff)}d overdue`:diff===0?'Today':`In ${diff}d`;
+  const icon=kind==='overdue'?'⚠️':kind==='today'?'🔔':'📅';
+  const dateCls=kind==='overdue'?'red':kind==='today'?'amber':'mgreen';
+  const cardCls=kind==='overdue'?'rem-overdue':kind==='today'?'rem-today':'';
+  return `<div class="reminder-card ${cardCls}" onclick="openDetail('${t.id}')">
+    <div class="rem-icon">${icon}</div>
+    <div class="rem-info"><div class="rem-name">${t.party}</div><div class="rem-sub">${TYPE_NAMES[t.type]} · ${t.weight}g · ${fmtAmt(t.amount)}</div></div>
+    <div class="rem-date ${dateCls}">${dateStr}</div>
+  </div>`;
+}
+
+function renderParties(){
+  const map={};
+  transactions.forEach(t=>{if(!map[t.phone])map[t.phone]={name:t.party,phone:t.phone,txns:[]};map[t.phone].txns.push(t);});
+  const list=document.getElementById('parties-list');
+  const parties=Object.values(map);
+  if(!parties.length){list.innerHTML=`<div class="empty-state"><span class="empty-icon">🤝</span><p>No parties yet.</p></div>`;return;}
+  list.innerHTML=parties.map(p=>{
+    const open=p.txns.filter(t=>t.status==='open').length;
+    const gold=p.txns.reduce((s,t)=>s+(t.metal==='gold'?t.weight:0),0);
+    const cash=p.txns.filter(t=>t.type==='cash_loan').reduce((s,t)=>s+t.amount,0);
+    return `<div class="party-card" onclick="filterByParty('${p.phone}')">
+      <div class="party-card-top">
+        <div class="party-avatar">${p.name.charAt(0).toUpperCase()}</div>
+        <div><div class="party-name">${p.name}</div><div class="party-phone">📞 ${p.phone}</div></div>
+      </div>
+      <div class="party-stats">
+        <div class="p-stat"><label>Open Deals</label><span>${open}</span></div>
+        <div class="p-stat"><label>Gold (g)</label><span>${gold.toFixed(1)}</span></div>
+        <div class="p-stat"><label>Cash Lent</label><span>${cash>=1e5?(cash/1e5).toFixed(1)+'L':cash>=1000?'₹'+(cash/1000).toFixed(0)+'k':fmtAmt(cash)}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterByParty(phone){
+  document.getElementById('search-input').value=phone;
+  currentFilter='all';
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  document.querySelector('.chip[data-f="all"]').classList.add('active');
+  showPage('txns');
+}
+
+function openDetail(id){
+  const t=transactions.find(x=>x.id===id);
+  if(!t) return;
+  document.getElementById('ds-party').textContent=t.party;
+  document.getElementById('ds-phone').textContent='📞 '+t.phone;
+  const si=statusInfo(t);
+  document.getElementById('ds-badges').innerHTML=typeBadge(t.type)+`<span class="status-pill ${si.cls}" style="font-size:12px;padding:4px 12px">${si.label}</span>`;
+  const today=new Date();today.setHours(0,0,0,0);
+  let followupStr='—';
+  if(t.followup){
+    const d=new Date(t.followup);const diff=Math.round((d-today)/864e5);
+    const tag=diff<0?`<span style="color:var(--red)"> (${Math.abs(diff)}d overdue)</span>`:diff===0?`<span style="color:var(--orange)"> (Today!)</span>`:`<span style="color:var(--green)"> (${diff}d away)</span>`;
+    followupStr=t.followup+tag;
+  }
+  document.getElementById('ds-body').innerHTML=`
+    <div class="detail-row">
+      <div class="d-item"><label>Metal & Purity</label><span>${t.metal==='gold'?'🥇 Gold':'🥈 Silver'} ${t.purity||''}</span></div>
+      <div class="d-item"><label>Date & Time</label><span style="font-size:14px">${t.date} ${t.time||''}</span></div>
+    </div>
+    <div class="detail-row">
+      <div class="d-item"><label>Weight</label><span class="big">${t.weight}g</span></div>
+      <div class="d-item"><label>Amount</label><span class="big">${fmtAmt(t.amount)}</span></div>
+    </div>
+    <div class="detail-row">
+      <div class="d-item"><label>Rate /10g</label><span>${fmtAmt(t.rate)}</span></div>
+      <div class="d-item"><label>Follow-up Due</label><span style="font-size:13px">${followupStr}</span></div>
+    </div>
+    ${t.notes?`<div class="notes-box">📝 ${t.notes}</div>`:''}
+    <div class="wa-row ${t.waStatus==='confirmed'?'wa-confirmed':'wa-pending'}">
+      <span class="wa-icon">${t.waStatus==='confirmed'?'✅':'⏳'}</span>
+      <span>${t.waStatus==='confirmed'?'Party confirmed transaction':'Awaiting party confirmation'}</span>
+    </div>
+    ${t.images&&t.images.length?`<div class="photo-row">${t.images.map(i=>`<img class="photo-thumb" src="${i}">`).join('')}</div>`:''}
+  `;
+  document.getElementById('ds-actions').innerHTML=`
+    ${t.status==='open'?`<button class="big-btn big-btn-green" onclick="openCloseSheet('${t.id}')">✅ Mark as Closed</button>`:''}
+    <button class="big-btn big-btn-gold" onclick="resendWA('${t.id}')">📲 Resend WhatsApp</button>
+    <button class="big-btn big-btn-red" onclick="delTxn('${t.id}')">🗑️ Delete Entry</button>
+  `;
+  document.getElementById('sheet-overlay').classList.add('open');
+  document.getElementById('bottom-sheet').classList.add('open');
+}
+
+function closeSheet(){
+  document.getElementById('sheet-overlay').classList.remove('open');
+  document.getElementById('bottom-sheet').classList.remove('open');
+}
+
+function openForm(){
+  uploadedImages=[];
+  document.getElementById('preview-row').innerHTML='';
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('f-time').value=new Date().toTimeString().slice(0,5);
+  ['f-party','f-phone','f-purity','f-weight','f-rate','f-amount','f-followup','f-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-type').value='';
+  document.getElementById('calc-chip').textContent='Amount: —';
+  const parties=[...new Set(transactions.map(t=>t.party))];
+  document.getElementById('party-list').innerHTML=parties.map(p=>`<option value="${p}">`).join('');
+  document.getElementById('form-sheet').classList.add('open');
+}
+
+function closeForm(){document.getElementById('form-sheet').classList.remove('open');}
+
+function calcAmt(){
+  const w=parseFloat(document.getElementById('f-weight').value)||0;
+  const r=parseFloat(document.getElementById('f-rate').value)||0;
+  if(w&&r){const amt=Math.round(w*r/10);document.getElementById('f-amount').value=amt;document.getElementById('calc-chip').textContent=`Calculated: ₹${amt.toLocaleString('en-IN')}`;}
+  else document.getElementById('calc-chip').textContent='Amount: —';
+}
+
+function handleUpload(e){
+  Array.from(e.target.files).forEach(file=>{
+    const r=new FileReader();
+    r.onload=ev=>{uploadedImages.push(ev.target.result);const img=document.createElement('img');img.src=ev.target.result;img.className='prev-img';document.getElementById('preview-row').appendChild(img);};
+    r.readAsDataURL(file);
+  });
+}
+
+function saveTransaction(){
+  const party=document.getElementById('f-party').value.trim();
+  const phone=document.getElementById('f-phone').value.trim();
+  const type=document.getElementById('f-type').value;
+  const weight=parseFloat(document.getElementById('f-weight').value);
+  const rate=parseFloat(document.getElementById('f-rate').value);
+  if(!party||!phone||!type||!weight||!rate){alert('Please fill: Party Name, Phone, Type, Weight, Rate');return;}
+  const amount=parseFloat(document.getElementById('f-amount').value)||Math.round(weight*rate/10);
+  const t={id:'T'+Date.now(),party,phone,type,metal:document.getElementById('f-metal').value,weight,rate,amount,purity:document.getElementById('f-purity').value,date:document.getElementById('f-date').value,time:document.getElementById('f-time').value,followup:document.getElementById('f-followup').value,reminder:parseInt(document.getElementById('f-reminder').value),notes:document.getElementById('f-notes').value,status:'open',waStatus:'pending',images:[...uploadedImages],createdAt:Date.now()};
+  transactions.unshift(t);save();closeForm();renderAll();showWASheet(t);
+}
+
+function getBaseUrl(){
+  const loc = window.location;
+  // Handle Claude preview iframe (srcdoc/blob/null origin)
+  if(!loc.origin || loc.origin==='null' || loc.href.indexOf('srcdoc')>-1 || loc.href.indexOf('blob:')>-1) {
+    return localStorage.getItem('sona_deploy_url') || 'https://swapnil1995biraje-del.github.io/Sona';
+  }
+  return loc.origin + loc.pathname.replace(/\/$/,'');
+}
+// Save real URL when on actual deployment
+(function(){
+  const loc=window.location;
+  if(loc.origin && loc.origin!=='null' && loc.href.indexOf('srcdoc')===-1 && loc.href.indexOf('blob:')===-1){
+    localStorage.setItem('sona_deploy_url', loc.origin + loc.pathname.replace(/\/$/,''));
+  }
+})();
+
+function buildMsg(t){
+  const base = getBaseUrl();
+  const acceptLink = `${base}?txn=${t.id}&action=accept`;
+  const disputeLink = `${base}?txn=${t.id}&action=dispute`;
+  return `🔔 *SONA Gold Ledger — Confirmation*\n\nDear *${t.party}*,\n\nA transaction has been recorded in your name:\n\n*Type:* ${TYPE_NAMES[t.type]}\n*Metal:* ${t.metal==='gold'?'Gold 🥇':'Silver 🥈'} (${t.purity||'—'})\n*Weight:* ${t.weight}g\n*Rate:* ₹${t.rate.toLocaleString('en-IN')}/10g\n*Amount:* ₹${t.amount.toLocaleString('en-IN')}\n*Date:* ${t.date} ${t.time||''}\n${t.followup?`*Due Date:* ${t.followup}\n`:''}\nPlease confirm this transaction:\n\n✅ *ACCEPT:*\n${acceptLink}\n\n❌ *DISPUTE:*\n${disputeLink}\n\n— AB GOLD`;
+}
+
+function showWASheet(t){
+  const msg=buildMsg(t);
+  document.getElementById('wa-preview').textContent=msg;
+  document.getElementById('wa-to-label').textContent=`Message to: ${t.phone}`;
+  const url=`https://wa.me/91${t.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
+  document.getElementById('wa-open-btn').onclick=()=>{window.open(url,'_blank');t.waStatus='pending';save();closeWA();};
+  document.getElementById('wa-sheet').classList.add('open');
+}
+
+function closeWA(){document.getElementById('wa-sheet').classList.remove('open');}
+
+function resendWA(id){const t=transactions.find(x=>x.id===id);if(t){closeSheet();setTimeout(()=>showWASheet(t),250);}}
+
+function openCloseSheet(id){
+  const t=transactions.find(x=>x.id===id);if(!t)return;
+  closeTargetId=id;
+  document.getElementById('close-grid').innerHTML=`
+    <div class="c-item"><label>Party</label><span style="font-size:16px;font-family:'DM Sans'">${t.party}</span></div>
+    <div class="c-item"><label>Phone</label><span style="font-size:14px;font-family:'DM Sans'">${t.phone}</span></div>
+    <div class="c-item"><label>Weight</label><span>${t.weight}g</span></div>
+    <div class="c-item"><label>Amount</label><span>${fmtAmt(t.amount)}</span></div>`;
+  document.getElementById('close-confirm-btn').onclick=confirmClose;
+  closeSheet();setTimeout(()=>document.getElementById('close-sheet').classList.add('open'),250);
+}
+
+function confirmClose(){
+  const t=transactions.find(x=>x.id===closeTargetId);if(!t)return;
+  t.status='closed';t.closedAt=Date.now();save();renderAll();
+  document.getElementById('close-sheet').classList.remove('open');
+  const msg=`✅ *SONA Gold Ledger — CLOSED*\n\nDear *${t.party}*,\n\nTransaction fulfilled and closed.\n\n*Weight:* ${t.weight}g\n*Amount:* ₹${t.amount.toLocaleString('en-IN')}\n*Closed:* ${new Date().toLocaleDateString('en-IN')}\n\nThank you!\n— AB GOLD`;
+  const url=`https://wa.me/91${t.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`;
+  if(confirm('Send closure WhatsApp to '+t.party+'?')) window.open(url,'_blank');
+}
+
+function delTxn(id){
+  if(!confirm('Delete this transaction? Cannot be undone.'))return;
+  transactions=transactions.filter(x=>x.id!==id);save();closeSheet();renderAll();
+}
+
+function renderAll(){
+  renderHome();
+  if(document.getElementById('page-txns').classList.contains('active')) renderTxnPage();
+  if(document.getElementById('page-reminders').classList.contains('active')) renderReminders();
+  if(document.getElementById('page-parties').classList.contains('active')) renderParties();
+}
+
+renderAll();
+</script>
+</body>
+</html>
